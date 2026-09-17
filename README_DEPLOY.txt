@@ -1,19 +1,15 @@
-WALL PANEL HOUSE ORDER SCANNER — SHAREABLE WEB APP
+WALL PANEL HOUSE — ORDER SCANNER V4
 
-This folder is a Progressive Web App (PWA). Once hosted on HTTPS, people can open the link and use “Add to Home Screen” / “Install App” to save it like an app.
-
-FREE HOSTING OPTION: GITHUB PAGES
-1. Create a free GitHub account.
-2. Create a new public repository, e.g. wall-panel-house-order-scanner.
-3. Upload ALL files from this folder.
-4. In the repository: Settings -> Pages -> Deploy from branch -> main -> / (root) -> Save.
-5. GitHub will give you an HTTPS website address.
-6. Share that one address with your coworkers.
-7. On iPhone Safari: open the link -> Share -> Add to Home Screen.
-8. On supported browsers, use Install App / Add to Home Screen.
+Workflow:
+1) TAKE PHOTO or CHOOSE FROM PHOTOS
+2) Vision AI scans the printed order
+3) User confirms/corrects the scanned quantities
+4) Pull List is generated
 
 Important:
-- The app currently uses browser OCR (Tesseract.js loaded from a CDN), so the first scan needs internet access to load the OCR library.
-- The app's service worker caches the app shell after first load.
-- The current component rules are the supplied internal fence cheat sheet. Verify pull lists before pulling material.
-- A production version should move the AI/OCR extraction to a controlled backend and add login/permissions if the company wants private orders.
+- Do NOT put an OpenAI API key in this GitHub Pages app.
+- Set API_URL in index.html to the secure Cloudflare Worker URL after backend deployment.
+- Aluminum rules learned so far: 16 boards/section; 1 post/section; 4 L-corners/section; 2 caps/section; 2 total top+bottom rails/section.
+- Aluminum Premium Fence Gate 3x6: 16 additional aluminum boards per gate.
+- Screws are intentionally pending final confirmation (the cheat sheet says 4/section while a physical label showed 8/section).
+- Handwritten annotations are kept separate and must not override printed quantities automatically.
