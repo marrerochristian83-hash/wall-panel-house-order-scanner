@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b5d78">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon.svg">
+<title>Wall Panel House — Order Scanner</title>
+<style>
+:root{--blue:#0b5d78;--teal:#12a5a5;--bg:#f4f7f9;--card:#fff;--text:#17212b;--muted:#667784;--line:#d9e1e6}
+*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--text)}
+header{background:linear-gradient(135deg,var(--blue),#087f8b);color:white;padding:22px 18px 18px;position:sticky;top:0;z-index:5}
+header h1{font-size:22px;margin:0 0 4px}header p{margin:0;opacity:.85;font-size:13px}
+main{max-width:900px;margin:auto;padding:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:14px;box-shadow:0 2px 10px #00000008}
+button{border:0;border-radius:12px;padding:13px 16px;font-weight:700;font-size:15px;cursor:pointer}
+.primary{background:var(--blue);color:white}.secondary{background:#e9f1f4;color:var(--blue)}.danger{background:#ffe9e9;color:#a22}
+input[type=file]{display:none}.upload{display:block;text-align:center;border:2px dashed #9db7c2;border-radius:15px;padding:25px;background:#f8fbfc;cursor:pointer}
+.preview{width:100%;max-height:360px;object-fit:contain;border-radius:12px;margin-top:12px;display:none}
+.row{display:flex;gap:10px;flex-wrap:wrap}.row>*{flex:1;min-width:140px}
+.status{padding:10px 12px;border-radius:10px;background:#eef7f8;color:#17586a;font-size:14px}
+table{width:100%;border-collapse:collapse;font-size:14px}th,td{text-align:left;padding:10px 7px;border-bottom:1px solid var(--line)}th{background:#f1f5f7}
+.badge{display:inline-block;padding:4px 8px;border-radius:999px;background:#e6f4f5;color:#086b76;font-size:12px;font-weight:700}
+.big{font-size:28px;font-weight:800;color:var(--blue)}.muted{color:var(--muted);font-size:13px}
+textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:10px;padding:10px;font:14px monospace}
+.hidden{display:none}.check{margin:5px 0;padding:9px;border-radius:9px;background:#f7f9fa}
+footer{color:var(--muted);font-size:12px;text-align:center;padding:12px}
+@media(max-width:600px){main{padding:10px}.card{padding:13px}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Wall Panel House — Order Scanner</h1>
+  <p>Photo → OCR → fence components → pull list</p>
+</header>
+
+<main>
+<section class="card">
+  <label class="upload" for="photo">
+    <strong>📸 Take / Upload Order Photo</strong><br>
+    <span class="muted">Use a clear photo of the whole order sheet.</span>
+  </label>
+  <input id="photo" type="file" accept="image/*" capture="environment">
+  <img id="preview" class="preview">
+  <div class="row" style="margin-top:12px">
+    <button class="primary" id="scanBtn">SCAN ORDER</button>
+    <button class="secondary" id="demoBtn">TRY DEMO</button>
+  </div>
+  <div id="status" class="status" style="margin-top:12px">Ready.</div>
+</section>
+
+<section class="card hidden" id="ocrCard">
+  <h3>What the scanner read</h3>
+  <textarea id="ocrText"></textarea>
+  <p class="muted">You can correct the OCR text before calculating. This keeps the warehouse list under your control.</p>
+  <button class="primary" id="calculateBtn">CALCULATE MATERIALS</button>
+</section>
+
+<section class="card hidden" id="resultCard">
+  <div class="row">
+    <div><div class="muted">Fence sections</div><div class="big" id="sections">0</div></div>
+    <div><div class="muted">Gates</div><div class="big" id="gates">0</div></div>
+    <div><div class="muted">Posts listed</div><div class="big" id="postsListed">0</div></div>
+  </div>
+  <hr style="border:0;border-top:1px solid var(--line);margin:14px 0">
+  <div id="warnings"></div>
+  <h3>🧰 Pull List</h3>
+  <table>
+    <thead><tr><th>Component</th><th>Quantity</th><th>Notes</th></tr></thead>
+    <tbody id="pullBody"></tbody>
+  </table>
+  <div style="margin-top:14px" class="row">
+    <button class="primary" id="copyBtn">COPY PULL LIST</button>
+    <button class="secondary" id="printBtn">PRINT</button>
+  </div>
+</section>
+
+<section class="card">
+  <h3>📦 Packaging Rules</h3>
+  <table>
+    <thead><tr><th>Material</th><th>Pack</th><th>Size</th><th>Weight</th></tr></thead>
+    <tbody>
+      <tr><td>Acoustic panels</td><td>4 / box</td><td>2×8 or 2×9</td><td>100 lb / box</td></tr>
+      <tr><td>Exterior cladding</td><td>5 / box</td><td>8.5×106 in</td><td>—</td></tr>
+      <tr><td>Fluted</td><td>10 / box</td><td>6.5×106 in</td><td>—</td></tr>
+      <tr><td>Wood/Bamboo veneer</td><td>—</td><td>4×9</td><td>45 lb</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section class="card">
+  <h3>📋 Fence Rules Loaded</h3>
+  <p class="muted">Based on the Wall Panel House internal fence cheat sheet supplied for this prototype.</p>
+  <table>
+    <thead><tr><th>Fence type</th><th>Boards/slats</th><th>Post</th><th>Caps</th><th>Rails</th><th>L-corners</th><th>Brackets</th><th>Screws</th></tr></thead>
+    <tbody>
+      <tr><td>Aluminum — Full Privacy</td><td>16 boards</td><td>1</td><td>2</td><td>2</td><td>4</td><td>—</td><td>4</td></tr>
+      <tr><td>Aluminum — Semi-Private</td><td>12 slats</td><td>1</td><td>2</td><td>2</td><td>4</td><td>—</td><td>4</td></tr>
+      <tr><td>Composite — Full Privacy</td><td>9 boards</td><td>1</td><td>2</td><td>2</td><td>4</td><td>—</td><td>4</td></tr>
+      <tr><td>Composite — Top Lattice</td><td>7 boards + 3 lattice</td><td>1</td><td>1</td><td>2</td><td>4</td><td>6 lattice</td><td>—</td></tr>
+    </tbody>
+  </table>
+  <p class="muted" style="margin-bottom:0">Gate widths listed in the supplied reference: 3, 4, 6, 8, 10, 12 ft. Post lengths: 6, 8, 9, 10, 11 ft.</p>
+</section>
+</main>
+<footer>Prototype v1 • Verify the generated pull list against the order before pulling material.</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<script>
+const rules={
+  aluminum_full:{name:"Aluminum — Full Privacy",boards:16,boardLabel:"boards",post:1,caps:2,rails:2,l:4,brackets:0,screws:4},
+  aluminum_semi:{name:"Aluminum — Semi-Private",boards:12,boardLabel:"slats",post:1,caps:2,rails:2,l:4,brackets:0,screws:4},
+  composite_full:{name:"Composite — Full Privacy",boards:9,boardLabel:"boards",post:1,caps:2,rails:2,l:4,brackets:0,screws:4},
+  composite_lattice:{name:"Composite — Top Lattice",boards:7,boardLabel:"boards",lattice:3,post:1,caps:1,rails:2,l:4,brackets:6,screws:0}
+};
+const $=id=>document.getElementById(id);
+let selectedFile=null;
+$("photo").addEventListener("change",e=>{
+ selectedFile=e.target.files[0]; if(!selectedFile)return;
+ $("preview").src=URL.createObjectURL(selectedFile); $("preview").style.display="block";
+ $("status").textContent="Photo loaded. Tap SCAN ORDER.";
+});
+function setStatus(x){$("status").textContent=x}
+$("demoBtn").onclick=()=>{
+ $("ocrText").value=`Order #NGD4692
+Composite Fence Co-Extrusion Wholesale Price - Walnut
+1 x panel + 1 x post
+NEWGEN-FEN-20453-WLN-1P-2P
+30 of 30
+10 Ft In-Ground Fence Post
+2 of 2
+NewGen 8ft Inground Gate Post for Composite & Aluminum Gates
+2 of 2
+NewGen 9ft Inground Gate Post for Composite & Aluminum Gates
+2 of 2
+Adjustable Angle Fence Corner Post - 6 ft
+1 of 1
+WPC Fence Gate Double (8ft x 6ft) Walnut
+1 of 1
+WPC Fence Gate Single (3ft x 6ft) Walnut
+1 of 1`;
+ $("ocrCard").classList.remove("hidden"); setStatus("Demo order loaded. Tap CALCULATE MATERIALS.");
+};
+$("scanBtn").onclick=async()=>{
+ if(!selectedFile){setStatus("Choose a photo first.");return}
+ $("ocrCard").classList.remove("hidden"); setStatus("Reading photo… this can take a little while.");
+ try{
+   const result=await Tesseract.recognize(selectedFile,"eng",{logger:m=>{
+     if(m.status) setStatus(m.status+" "+Math.round((m.progress||0)*100)+"%");
+   }});
+   $("ocrText").value=result.data.text;
+   setStatus("OCR complete. Review the text, then calculate.");
+ }catch(e){setStatus("OCR error: "+e.message)}
+};
+function numBefore(text,patterns){
+ for(const p of patterns){
+   const re=new RegExp("(\\\\d+)\\\\s*(?:of\\\\s*\\\\d+)?\\\\s*"+p,"i");
+   const m=text.match(re); if(m)return +m[1];
+ }
+ return null;
+}
+function parseOrder(text){
+ const t=text.replace(/\\r/g,"\\n");
+ let sections=null;
+ // Common forms: "30 of 30" following the product line, or "30 sections".
+ const m1=t.match(/(?:composite|aluminum)[\\s\\S]{0,250}?(\\d+)\\s+of\\s+\\d+/i);
+ if(m1) sections=+m1[1];
+ if(sections===null){
+   const m2=t.match(/(\\d+)\\s*(?:sections?|panels?)(?!.*\\d)/i); if(m2)sections=+m2[1];
+ }
+ // Detect product type from wording.
+ let type=null;
+ if(/top\\s*lattice|lattice/i.test(t)) type="composite_lattice";
+ else if(/composite/i.test(t)) type="composite_full";
+ else if(/semi[- ]private/i.test(t)) type="aluminum_semi";
+ else if(/aluminum/i.test(t)) type="aluminum_full";
+ // In the supplied order, "Composite Fence Co-Extrusion" is composite full privacy.
+ if(/co[- ]?extrusion/i.test(t)&&/composite/i.test(t)) type="composite_full";
+ const posts=[];
+ for(const len of [6,8,9,10,11]){
+   const re=new RegExp("(\\d+)\\s*(?:of\\s*\\d+)?[\\s\\S]{0,100}?"+len+"\\s*(?:ft|feet)[^\\n]*post","ig");
+   let mm; while((mm=re.exec(t))!==null)posts.push({length:len,qty:+mm[1],text:mm[0].replace(/\\s+/g," ").trim()});
+ }
+ // Alternate: length first, quantity later.
+ for(const len of [6,8,9,10,11]){
+   const re=new RegExp(len+"\\s*(?:ft|feet)[^\\n]*post[\\s\\S]{0,80}?(\\d+)\\s+of\\s+\\d+","ig");
+   let mm; while((mm=re.exec(t))!==null)posts.push({length:len,qty:+mm[1],text:mm[0].replace(/\\s+/g," ").trim()});
+ }
+ // Deduplicate exact length/qty.
+ const uniq=[]; for(const p of posts)if(!uniq.some(x=>x.length===p.length&&x.qty===p.qty))uniq.push(p);
+ const doubleGate=(t.match(/(?:gate\\s*)?double[^\\n]*?(\\d+)\\s+of\\s+\\d+/i)||[])[1];
+ const singleGate=(t.match(/(?:gate\\s*)?single[^\\n]*?(\\d+)\\s+of\\s+\\d+/i)||[])[1];
+ const gates=[];
+ if(/double/i.test(t)) gates.push({kind:"Double gate",qty:doubleGate?+doubleGate:1,size:(t.match(/double[^\\n]*?(\\d+\\s*ft[^\\n]*?\\d+\\s*ft)/i)||[])[1]||""});
+ if(/single/i.test(t)) gates.push({kind:"Single gate",qty:singleGate?+singleGate:1,size:(t.match(/single[^\\n]*?(\\d+\\s*ft[^\\n]*?\\d+\\s*ft)/i)||[])[1]||""});
+ const cornerQty=(t.match(/adjustable angle[^\\n]*?(\\d+)\\s+of\\s+\\d+/i)||[])[1];
+ return {sections,type,posts:uniq,gates,cornerQty:cornerQty?+cornerQty:0,text:t};
+}
+function calculate(){
+ const p=parseOrder($("ocrText").value); $("resultCard").classList.remove("hidden");
+ $("sections").textContent=p.sections??"?"; $("gates").textContent=p.gates.reduce((a,g)=>a+g.qty,0);
+ $("postsListed").textContent=p.posts.reduce((a,g)=>a+g.qty,0);
+ const body=$("pullBody"); body.innerHTML="";
+ const warnings=[];
+ if(p.type && p.sections!=null){
+   const r=rules[p.type];
+   addRow(r.boardLabel,r.boards*p.sections,r.name+" rule");
+   if(r.lattice)addRow("Lattice boards",r.lattice*p.sections,r.name+" rule");
+   addRow("Standard posts",r.post*p.sections,r.name+" rule");
+   addRow("Caps",r.caps*p.sections,r.name+" rule");
+   addRow("Rails",r.rails*p.sections,r.name+" = top + bottom");
+   addRow("L-corners",r.l*p.sections,r.name+" rule");
+   if(r.brackets)addRow("Lattice brackets",r.brackets*p.sections,r.name+" rule");
+   if(r.screws)addRow("Screws",r.screws*p.sections,r.name+" rule");
+ }else{
+   warnings.push("Fence type or section quantity could not be confidently detected. Select/check the fence type and quantity before pulling.");
+ }
+ for(const x of p.posts)addRow(`${x.length}' post`,x.qty,"Listed directly on order");
+ if(p.cornerQty)addRow("Adjustable angle fence corner posts",p.cornerQty,"Listed directly on order");
+ for(const g of p.gates)addRow(`${g.kind}${g.size?" ("+g.size+")":""}`,g.qty,"Listed directly on order");
+ if(p.gates.length)warnings.push("Gate component requirements beyond the listed gate itself are not specified in the supplied fence cheat sheet, so they are not invented here.");
+ $("warnings").innerHTML=warnings.map(w=>`<div class="check">⚠️ ${w}</div>`).join("");
+ window.lastPull=[...body.querySelectorAll("tr")].map(tr=>[...tr.children].map(td=>td.textContent));
+}
+function addRow(a,b,c){const tr=document.createElement("tr");tr.innerHTML=`<td>${a}</td><td><strong>${b}</strong></td><td>${c}</td>`;$("pullBody").appendChild(tr)}
+$("calculateBtn").onclick=calculate;
+$("copyBtn").onclick=()=>{
+ const lines=window.lastPull.map(r=>r.join(" — ")).join("\\n");
+ navigator.clipboard?.writeText("WALL PANEL HOUSE — PULL LIST\\n"+lines).then(()=>setStatus("Pull list copied."));
+};
+$("printBtn").onclick=()=>window.print();
+</script>
+<script>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js").catch(console.error));
+}
+</script>
+</body>
+</html>

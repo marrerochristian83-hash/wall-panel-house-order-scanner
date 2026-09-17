@@ -1,0 +1,13 @@
+{
+  "name": "Wall Panel House Order Scanner",
+  "short_name": "WPH Order Scanner",
+  "description": "Scan Wall Panel House order sheets and generate a warehouse pull list.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#f4f7f9",
+  "theme_color": "#0b5d78",
+  "orientation": "portrait",
+  "icons": [
+    {"src":"icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}
+  ]
+}
