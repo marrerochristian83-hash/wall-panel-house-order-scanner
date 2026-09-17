@@ -37,14 +37,15 @@ footer{color:var(--muted);font-size:12px;text-align:center;padding:12px}
 
 <main>
 <section class="card">
-  <label class="upload" for="photo">
-    <strong>📸 Take / Upload Order Photo</strong><br>
-    <span class="muted">Use a clear photo of the whole order sheet.</span>
-  </label>
-  <input id="photo" type="file" accept="image/*" capture="environment">
+  <div class="row">
+    <button class="primary" id="takeBtn">📸 TAKE PHOTO</button>
+    <button class="secondary" id="chooseBtn">🖼️ CHOOSE FROM PHOTOS</button>
+  </div>
+  <input id="photoCamera" type="file" accept="image/*" capture="environment" style="display:none">
+  <input id="photoGallery" type="file" accept="image/*" style="display:none">
   <img id="preview" class="preview">
   <div class="row" style="margin-top:12px">
-    <button class="primary" id="scanBtn">SCAN ORDER</button>
+    <button class="primary" id="scanBtn">🔎 SCAN ORDER</button>
     <button class="secondary" id="demoBtn">TRY DEMO</button>
   </div>
   <div id="status" class="status" style="margin-top:12px">Ready.</div>
@@ -116,11 +117,15 @@ const rules={
 };
 const $=id=>document.getElementById(id);
 let selectedFile=null;
-$("photo").addEventListener("change",e=>{
- selectedFile=e.target.files[0]; if(!selectedFile)return;
+function loadSelectedFile(file){
+ selectedFile=file; if(!selectedFile)return;
  $("preview").src=URL.createObjectURL(selectedFile); $("preview").style.display="block";
  $("status").textContent="Photo loaded. Tap SCAN ORDER.";
-});
+}
+$("takeBtn").onclick=()=>$("photoCamera").click();
+$("chooseBtn").onclick=()=>$("photoGallery").click();
+$("photoCamera").addEventListener("change",e=>loadSelectedFile(e.target.files[0]));
+$("photoGallery").addEventListener("change",e=>loadSelectedFile(e.target.files[0]));
 function setStatus(x){$("status").textContent=x}
 $("demoBtn").onclick=()=>{
  $("ocrText").value=`Order #NGD4692
